@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>「檸檬」考査対策アプリ</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+        }
+        #app {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #666;
+        }
+        .question-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #eaeaea;
+        }
+        .question-title {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        .multi-notice {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #fdfdfd;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            word-break: break-all;
+        }
+        .option-label:hover {
+            background: #f1f1f1;
+        }
+        .option-label input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .result-icon {
+            font-weight: bold;
+            margin-left: auto;
+            padding-left: 10px;
+            white-space: nowrap;
+        }
+        .correct { color: #27ae60; }
+        .incorrect { color: #c0392b; }
+        .correct-bg { background-color: #e8f8f5 !important; border-color: #27ae60; }
+        .wrong-bg { background-color: #fdedec !important; border-color: #e74c3c; }
+        .missed-bg { background-color: #fef9e7 !important; border-color: #f1c40f; }
+
+        #submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+        #submit-btn:hover {
+            background: #2980b9;
+        }
+        #score-display {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+        #score-display h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.8em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>「檸檬」考査対策アプリ</h1>
+        <p class="description">全問解答後、「回答する」ボタンを押して正誤を確認してください。</p>
+        
+        <div id="score-display"></div>
+        <div id="quiz-container"></div>
+        <button id="submit-btn" onclick="checkAnswers()">回答する</button>
+    </div>
+
+    <script>
+        // 問題データ (正解とダミー選択肢)
+        const quizData = [
+            {
+                question: "「街から街を浮浪し続けていた」なぜ？",
+                type: "single",
+                options: [
+                    { text: "得体の知れない不吉な塊に押さえつけられ心が不安定で、落ち着いてじっとしていられない。", isCorrect: true },
+                    { text: "京都の街並みの美しさに魅了され、少しでも多くの景色を目に焼き付けたかったから。", isCorrect: false },
+                    { text: "友人たちとの約束を忘れてしまい、あてもなく待ち合わせ場所を探し回っていたから。", isCorrect: false },
+                    { text: "新しい小説の題材を見つけるため、人々の生活を観察して歩いていたから。", isCorrect: false },
+                    { text: "借金取りから逃れるため、一箇所に留まることができなかったから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「みすぼらしくて美しいもの」の例。",
+                type: "multi",
+                options: [
+                    { text: "崩れかかった街", isCorrect: true },
+                    { text: "汚い洗濯物が干してある", isCorrect: true },
+                    { text: "ガラクタが転がしてある部屋が覗く", isCorrect: true },
+                    { text: "裏通り", isCorrect: true },
+                    { text: "華やかなショーウィンドウ", isCorrect: false }
+                ]
+            },
+            {
+                question: "「錯覚を起こそうと努める」なぜ？",
+                type: "single",
+                options: [
+                    { text: "現実の京都での生活が憂鬱かつ不安定であるため、現実逃避をしていた。", isCorrect: true },
+                    { text: "友人の書いた詩の世界に没入し、自分がその主人公であるかのように思い込もうとした。", isCorrect: false },
+                    { text: "過去の輝かしい記憶を呼び起こすことで、未来への希望を見出そうとしていた。", isCorrect: false },
+                    { text: "丸善の店内に並ぶ高級品を手に入れた自分を想像し、優越感に浸りたかった。", isCorrect: false },
+                    { text: "病気による高熱のため、現実と夢の境界が曖昧になっていた。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「おはじき・南京玉が好きになった」なぜ？",
+                type: "single",
+                options: [
+                    { text: "大きくなり落魄れた現実と対照的。別世界のような楽しく爽やかな幼時の記憶を思い出す。", isCorrect: true },
+                    { text: "それらの持つ複雑な模様が、自身の内面にある不安や葛藤を正確に表していると感じたから。", isCorrect: false },
+                    { text: "高価な美術品よりも、安価で手に入りやすいものの中に真の芸術性を見出したから。", isCorrect: false },
+                    { text: "友人が集めているのを見て、対抗心から自分もより美しいものを集めたくなったから。", isCorrect: false },
+                    { text: "丸善で売られているような舶来品に対する、一種の反発心から。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（丸善は）重苦しい場所に過ぎなかった」なぜ？",
+                type: "single",
+                options: [
+                    { text: "落魄れた私と、丸善で売られている高級品や真面目に働く人との対比からプレッシャーを感じる。", isCorrect: true },
+                    { text: "店内の照明が暗く、常に陰鬱な雰囲気が漂っていたから。", isCorrect: false },
+                    { text: "店員たちの態度が冷たく、客として歓迎されていないように感じたから。", isCorrect: false },
+                    { text: "かつて恋人と一緒に訪れた場所であり、辛い別れを思い出してしまうから。", isCorrect: false },
+                    { text: "欲しい本がいつも品切れで、落胆することばかりだったから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「借金取りの亡霊のよう」なぜ？",
+                type: "single",
+                options: [
+                    { text: "しつこく追いかけ、取り憑いて苦しめてくることの比喩。", isCorrect: true },
+                    { text: "姿が見えないのに、どこからか不気味な声だけが聞こえてくることの比喩。", isCorrect: false },
+                    { text: "夜中にふと目覚めると、枕元にぼんやりと立っていることの比喩。", isCorrect: false },
+                    { text: "忘れた頃にやってきて、過去の過ちを蒸し返すことの比喩。", isCorrect: false },
+                    { text: "お金を払うまで一歩も動こうとしない強情さの比喩。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「私はここから彷徨い出なければならなかった」なぜ？",
+                type: "single",
+                options: [
+                    { text: "友達が学校に出て1人取り残されると、空虚さや孤独さに耐えられない。", isCorrect: true },
+                    { text: "部屋の中にいると、不吉な塊がどんどん大きくなっていくように感じたから。", isCorrect: false },
+                    { text: "大家から家賃の督促を受け、居留守を使うのが限界に達したから。", isCorrect: false },
+                    { text: "素晴らしいインスピレーションが湧き、すぐにでも書き留めなければならないと思ったから。", isCorrect: false },
+                    { text: "檸檬の匂いが部屋中に充満し、息苦しくなってしまったから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "いたたまれない",
+                type: "single",
+                options: [
+                    { text: "もうそこにじっとしていられない。", isCorrect: true },
+                    { text: "恥ずかしくて顔から火が出るようだ。", isCorrect: false },
+                    { text: "悲しくて涙が止まらない。", isCorrect: false },
+                    { text: "怒りで我を忘れてしまう。", isCorrect: false },
+                    { text: "嬉しくて思わず跳び上がってしまう。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（果物屋が）最も好きな店であった」なぜ？",
+                type: "single",
+                options: [
+                    { text: "この店は庶民的な高級でない店。「みすぼらしく美しい」に一致した。", isCorrect: true },
+                    { text: "店主が親切で、いつもおまけをしてくれたから。", isCorrect: false },
+                    { text: "並んでいる果物がどれも新鮮で、輝くように見えたから。", isCorrect: false },
+                    { text: "亡くなった母がよく連れて行ってくれた、思い出の場所だったから。", isCorrect: false },
+                    { text: "店の奥から聞こえてくる音楽が、心を落ち着かせてくれたから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「そこの家の美しいのは夜だった」なぜ？",
+                type: "single",
+                options: [
+                    { text: "真っ暗な夜間はコントラストが際立って店の明かりが目立ち、並んでいる品物が映える。", isCorrect: true },
+                    { text: "夜になると店主が特別な果物を並べ始め、それがまるで宝石のように輝いていたから。", isCorrect: false },
+                    { text: "周囲が静まり返ることで、果物の放つ芳醇な香りがより一層強く感じられたから。", isCorrect: false },
+                    { text: "夜だけ開く不思議な店で、訪れる客たちも皆どこか秘密めいていたから。", isCorrect: false },
+                    { text: "暗闇の中に浮かび上がる店の外観が、まるで西洋の古いお城のように見えたから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「それを一つだけ買うことにした」なぜ？",
+                type: "multi",
+                options: [
+                    { text: "檸檬の単純な色", isCorrect: true },
+                    { text: "檸檬の丈の詰まった紡錘形の格好", isCorrect: true },
+                    { text: "ポケットに入っていた全財産で買えるのがそれ一つだけだったから。", isCorrect: false },
+                    { text: "とても良い香りがして、食欲をそそられたから。", isCorrect: false },
+                    { text: "店主から特別に安くすると勧められたから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "不吉な塊が檸檬で紛らわされたのをどう表現した？",
+                type: "single",
+                options: [
+                    { text: "「逆説的な本当であった」", isCorrect: true },
+                    { text: "「一筋の光明が差した」", isCorrect: false },
+                    { text: "「狐につままれたようであった」", isCorrect: false },
+                    { text: "「魔法にかかったようであった」", isCorrect: false },
+                    { text: "「劇的な変化であった」", isCorrect: false }
+                ]
+            },
+            {
+                question: "「軽やかな興奮に弾んで、一種誇りかな気持ち」なぜ？",
+                type: "multi",
+                options: [
+                    { text: "昔からずっと探していたものの様に、しっくり、ピタッとハマった。", isCorrect: true },
+                    { text: "憂鬱が檸檬で緩んだ。", isCorrect: true },
+                    { text: "自分が丸善にいる人々よりも高尚な存在であると感じた。", isCorrect: false },
+                    { text: "檸檬の素晴らしい香りが周囲の客の注目を集めた。", isCorrect: false },
+                    { text: "友人に見せびらかすための最高の品を手に入れたと思った。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「つまりはこの重さ（檸檬）なんだな」どういうこと？",
+                type: "single",
+                options: [
+                    { text: "この重さは全ての美しいもの、善いものの重さで、「美」「善」という概念の象徴。", isCorrect: true },
+                    { text: "檸檬の重さが、これまでの人生で背負ってきた苦悩の重さとちょうど同じだったということ。", isCorrect: false },
+                    { text: "物理的な重さではなく、その檸檬が持つ金銭的な価値の重さを実感したということ。", isCorrect: false },
+                    { text: "人間が持つべき謙虚さや誠実さの重みを、檸檬を通じて悟ったということ。", isCorrect: false },
+                    { text: "世界のすべてがこの小さな檸檬の重さに集約されているという、誇大妄想的な感覚。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「平常あんなに避けていた丸善」なぜ？",
+                type: "single",
+                options: [
+                    { text: "華美と贅沢の象徴である丸善は、ひたすら気づまりな場所でしかなくなっていたから。", isCorrect: true },
+                    { text: "過去に丸善で店員とトラブルを起こし、出入り禁止になっていたから。", isCorrect: false },
+                    { text: "丸善の店内に並ぶ本が高価すぎて、今の自分には手が出ないと分かっていたから。", isCorrect: false },
+                    { text: "丸善に行くと、昔の恋人と鉢合わせする可能性が高かったから。", isCorrect: false },
+                    { text: "丸善特有の薬品のような匂いが、どうにも好きになれなかったから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（丸善に）易々と入れるように思えた」なぜ？",
+                type: "multi",
+                options: [
+                    { text: "檸檬により不吉な塊が緩み、幸福で満たされていた。", isCorrect: true },
+                    { text: "檸檬は丸善の重苦しさをはねのける。", isCorrect: true },
+                    { text: "給料日直後で、財布の中に十分なお金があったから。", isCorrect: false },
+                    { text: "いつも厳しい入り口の警備員が、その日は不在だったから。", isCorrect: false },
+                    { text: "友人が店内で待っているという安心感があったから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（丸善に）ズカズカ入っていった」そのあとの心情は？",
+                type: "single",
+                options: [
+                    { text: "幸福な感情は逃げ、心が満たされず余計に不吉なかたまりを感じている。", isCorrect: true },
+                    { text: "思い切って入ってみて良かったという、晴れやかな達成感に包まれている。", isCorrect: false },
+                    { text: "店員に咎められるのではないかという、強い不安と恐怖を感じている。", isCorrect: false },
+                    { text: "すぐに欲しいものを見つけ出し、意気揚々と買い物を楽しんでいる。", isCorrect: false },
+                    { text: "周囲の客の優雅な態度に圧倒され、自分の身なりを恥ずかしく思っている。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（画本を見た後周囲を見渡す）変にそぐわない気持ち」どんなもの？",
+                type: "single",
+                options: [
+                    { text: "日常と違う別世界を見たあとに丸善の日常を見渡すことで、ギャップを感じている。", isCorrect: true },
+                    { text: "画本の内容があまりにも退屈で、時間を無駄にしたという後悔の気持ち。", isCorrect: false },
+                    { text: "美しい画本の世界に閉じこもりたいという、強い逃避願望。", isCorrect: false },
+                    { text: "周囲の客たちが皆、自分よりも高価な本を見ていることへの嫉妬心。", isCorrect: false },
+                    { text: "自分だけがこの画本の真の価値を理解しているという、優越感と孤独感。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（画本を見た後周囲を見渡す）変にそぐわない気持ち」今井正道の例えとは？",
+                type: "single",
+                options: [
+                    { text: "映画の終わった直後に、現実に引き戻される感覚。", isCorrect: true },
+                    { text: "長い夢から覚めた直後に、自分がどこにいるのか分からなくなる感覚。", isCorrect: false },
+                    { text: "お祭りが終わった後の、静まり返った神社に一人残された感覚。", isCorrect: false },
+                    { text: "激しい運動をした直後に、全身の力が抜けていく感覚。", isCorrect: false },
+                    { text: "素晴らしい音楽を聴き終えた後、しばらく余韻に浸っている感覚。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「（城の頂上に）檸檬を据え付けた」なぜ？",
+                type: "single",
+                options: [
+                    { text: "現状の憂鬱さを象徴する、画本の複雑な色の頂上に、これを打ち消す檸檬を選んだ。", isCorrect: true },
+                    { text: "単に一番上に乗せた方が、バランスが良くて見栄えがすると思ったから。", isCorrect: false },
+                    { text: "丸善の店員にいたずらを仕掛けるため、一番目立つ場所に置いた。", isCorrect: false },
+                    { text: "檸檬を神聖なものとして祀り上げるための、儀式的な行為だった。", isCorrect: false },
+                    { text: "檸檬の黄色が、画本の表紙の青色と最も美しいコントラストを生み出すから。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「私をギョッとさせた」なぜ？",
+                type: "single",
+                options: [
+                    { text: "自分やアイデア自体に対する驚き。", isCorrect: true },
+                    { text: "突然背後から声をかけられ、誰かに見られていたのかと焦ったため。", isCorrect: false },
+                    { text: "檸檬を置いた瞬間、画本が崩れ落ちて大きな音を立てたため。", isCorrect: false },
+                    { text: "檸檬の色が、自分が思っていたよりもはるかに鮮やかだったため。", isCorrect: false },
+                    { text: "自分の行動が、かつての友人が言っていたことと全く同じだと気づいたため。", isCorrect: false }
+                ]
+            },
+            {
+                question: "「変にくすぐったい気持ち」どんな気持ち？",
+                type: "multi",
+                options: [
+                    { text: "してやったりの満足。", isCorrect: true },
+                    { text: "楽しんでいる。", isCorrect: true },
+                    { text: "悪戯をしたことへの照れくささ", isCorrect: true },
+                    { text: "誰かに褒めてもらいたいという承認欲求", isCorrect: false },
+                    { text: "すぐに見つかって怒られるのではないかという恐怖", isCorrect: false }
+                ]
+            }
+        ];
+
+        // 配列をシャッフルする関数
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // アプリの描画
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            
+            quizData.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.id = `q-card-${index}`;
+
+                let html = `<h3 class="question-title">問${index + 1}. ${q.question}</h3>`;
+                
+                if (q.type === 'multi') {
+                    html += `<div class="multi-notice">【複数選択】</div>`;
+                }
+
+                html += `<div class="options">`;
+                
+                // 選択肢をシャッフル
+                const shuffledOptions = shuffleArray([...q.options]);
+
+                shuffledOptions.forEach((opt, optIndex) => {
+                    const inputType = q.type === 'multi' ? 'checkbox' : 'radio';
+                    const name = q.type === 'multi' ? `q${index}_${optIndex}` : `q${index}`;
+                    const id = `q${index}_opt${optIndex}`;
+                    
+                    html += `
+                        <label class="option-label" for="${id}">
+                            <input type="${inputType}" name="${name}" id="${id}" value="${opt.isCorrect}">
+                            ${opt.text}
+                            <span class="result-icon" id="result-${id}"></span>
+                        </label>
+                    `;
+                });
+
+                html += `</div>`;
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
+        }
+
+        // 回答の判定
+        function checkAnswers() {
+            let score = 0;
+            
+            quizData.forEach((q, index) => {
+                const card = document.getElementById(`q-card-${index}`);
+                const inputs = card.querySelectorAll('input');
+                let isQuestionCorrect = true; // この問題が完全に正解かどうか
+                
+                inputs.forEach(input => {
+                    const isCorrectOption = input.value === 'true';
+                    const isChecked = input.checked;
+                    const resultIcon = document.getElementById(`result-${input.id}`);
+                    const label = input.closest('label');
+                    
+                    if (q.type === 'multi') {
+                        // 複数選択の場合、選択肢ごとに判定
+                        if (isCorrectOption) {
+                            if (isChecked) {
+                                resultIcon.innerHTML = '⭕️';
+                                resultIcon.className = 'result-icon correct';
+                                label.classList.add('correct-bg');
+                            } else {
+                                resultIcon.innerHTML = '❌ 選択漏れ';
+                                resultIcon.className = 'result-icon incorrect';
+                                label.classList.add('missed-bg');
+                                isQuestionCorrect = false;
+                            }
+                        } else {
+                            if (isChecked) {
+                                resultIcon.innerHTML = '❌ 不正解';
+                                resultIcon.className = 'result-icon incorrect';
+                                label.classList.add('wrong-bg');
+                                isQuestionCorrect = false;
+                            }
+                        }
+                    } else {
+                        // 単一選択の場合
+                        if (isCorrectOption) {
+                            label.classList.add('correct-bg');
+                            if (isChecked) {
+                                resultIcon.innerHTML = '⭕️ 正解';
+                                resultIcon.className = 'result-icon correct';
+                            } else {
+                                resultIcon.innerHTML = '👈 正解';
+                                resultIcon.className = 'result-icon correct';
+                                isQuestionCorrect = false;
+                            }
+                        } else {
+                            if (isChecked) {
+                                resultIcon.innerHTML = '❌ 不正解';
+                                resultIcon.className = 'result-icon incorrect';
+                                label.classList.add('wrong-bg');
+                                isQuestionCorrect = false;
+                            }
+                        }
+                    }
+                    // 入力を無効化（変更不可にする）
+                    input.disabled = true;
+                });
+                
+                if (isQuestionCorrect) {
+                    score++;
+                }
+            });
+
+            // スコアの表示
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerHTML = `<h2>結果: ${score} / ${quizData.length} 問 完答</h2><p>間違えたところを復習しましょう。</p>`;
+            scoreDisplay.style.display = 'block';
+            
+            // ボタンを隠す
+            document.getElementById('submit-btn').style.display = 'none';
+
+            // 一番上へスクロール
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 初期描画
+        window.onload = renderQuiz;
+    </script>
+</body>
+</html>
