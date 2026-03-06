@@ -54,6 +54,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            margin-bottom: 15px;
         }
         .option-label {
             display: flex;
@@ -85,48 +86,34 @@
         .wrong-bg { background-color: #fdedec !important; border-color: #e74c3c; }
         .missed-bg { background-color: #fef9e7 !important; border-color: #f1c40f; }
 
-        #submit-btn {
+        .check-btn {
             display: block;
             width: 100%;
-            padding: 15px;
-            font-size: 1.2em;
+            padding: 12px;
+            font-size: 1.1em;
             font-weight: bold;
             background: #3498db;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: background 0.3s;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
         }
-        #submit-btn:hover {
+        .check-btn:hover {
             background: #2980b9;
         }
-        #score-display {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-        }
-        #score-display h2 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 1.8em;
+        .check-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div id="app">
         <h1>「檸檬」考査対策アプリ</h1>
-        <p class="description">全問解答後、「回答する」ボタンを押して正誤を確認してください。</p>
+        <p class="description">各問題ごとに「回答する」ボタンを押して正誤を確認してください。</p>
         
-        <div id="score-display"></div>
         <div id="quiz-container"></div>
-        <button id="submit-btn" onclick="checkAnswers()">回答する</button>
     </div>
 
     <script>
@@ -420,87 +407,80 @@
                 });
 
                 html += `</div>`;
+                
+                // 問題ごとの回答ボタンを追加
+                html += `<button class="check-btn" onclick="checkSingleAnswer(${index})" id="btn-${index}">回答する</button>`;
+                
                 card.innerHTML = html;
                 container.appendChild(card);
             });
         }
 
-        // 回答の判定
-        function checkAnswers() {
-            let score = 0;
+        // 1問ごとの回答判定
+        function checkSingleAnswer(index) {
+            const q = quizData[index];
+            const card = document.getElementById(`q-card-${index}`);
+            const inputs = card.querySelectorAll('input');
+            const btn = document.getElementById(`btn-${index}`);
             
-            quizData.forEach((q, index) => {
-                const card = document.getElementById(`q-card-${index}`);
-                const inputs = card.querySelectorAll('input');
-                let isQuestionCorrect = true; // この問題が完全に正解かどうか
+            // 少なくとも1つ選択されているかチェック
+            const hasSelection = Array.from(inputs).some(input => input.checked);
+            if (!hasSelection) {
+                alert("選択肢を選んでください。");
+                return;
+            }
+
+            inputs.forEach(input => {
+                const isCorrectOption = input.value === 'true';
+                const isChecked = input.checked;
+                const resultIcon = document.getElementById(`result-${input.id}`);
+                const label = input.closest('label');
                 
-                inputs.forEach(input => {
-                    const isCorrectOption = input.value === 'true';
-                    const isChecked = input.checked;
-                    const resultIcon = document.getElementById(`result-${input.id}`);
-                    const label = input.closest('label');
-                    
-                    if (q.type === 'multi') {
-                        // 複数選択の場合、選択肢ごとに判定
-                        if (isCorrectOption) {
-                            if (isChecked) {
-                                resultIcon.innerHTML = '⭕️';
-                                resultIcon.className = 'result-icon correct';
-                                label.classList.add('correct-bg');
-                            } else {
-                                resultIcon.innerHTML = '❌ 選択漏れ';
-                                resultIcon.className = 'result-icon incorrect';
-                                label.classList.add('missed-bg');
-                                isQuestionCorrect = false;
-                            }
+                if (q.type === 'multi') {
+                    // 複数選択の場合
+                    if (isCorrectOption) {
+                        if (isChecked) {
+                            resultIcon.innerHTML = '⭕️';
+                            resultIcon.className = 'result-icon correct';
+                            label.classList.add('correct-bg');
                         } else {
-                            if (isChecked) {
-                                resultIcon.innerHTML = '❌ 不正解';
-                                resultIcon.className = 'result-icon incorrect';
-                                label.classList.add('wrong-bg');
-                                isQuestionCorrect = false;
-                            }
+                            resultIcon.innerHTML = '❌ 選択漏れ';
+                            resultIcon.className = 'result-icon incorrect';
+                            label.classList.add('missed-bg');
                         }
                     } else {
-                        // 単一選択の場合
-                        if (isCorrectOption) {
-                            label.classList.add('correct-bg');
-                            if (isChecked) {
-                                resultIcon.innerHTML = '⭕️ 正解';
-                                resultIcon.className = 'result-icon correct';
-                            } else {
-                                resultIcon.innerHTML = '👈 正解';
-                                resultIcon.className = 'result-icon correct';
-                                isQuestionCorrect = false;
-                            }
-                        } else {
-                            if (isChecked) {
-                                resultIcon.innerHTML = '❌ 不正解';
-                                resultIcon.className = 'result-icon incorrect';
-                                label.classList.add('wrong-bg');
-                                isQuestionCorrect = false;
-                            }
+                        if (isChecked) {
+                            resultIcon.innerHTML = '❌ 不正解';
+                            resultIcon.className = 'result-icon incorrect';
+                            label.classList.add('wrong-bg');
                         }
                     }
-                    // 入力を無効化（変更不可にする）
-                    input.disabled = true;
-                });
-                
-                if (isQuestionCorrect) {
-                    score++;
+                } else {
+                    // 単一選択の場合
+                    if (isCorrectOption) {
+                        label.classList.add('correct-bg');
+                        if (isChecked) {
+                            resultIcon.innerHTML = '⭕️ 正解';
+                            resultIcon.className = 'result-icon correct';
+                        } else {
+                            resultIcon.innerHTML = '👈 正解';
+                            resultIcon.className = 'result-icon correct';
+                        }
+                    } else {
+                        if (isChecked) {
+                            resultIcon.innerHTML = '❌ 不正解';
+                            resultIcon.className = 'result-icon incorrect';
+                            label.classList.add('wrong-bg');
+                        }
+                    }
                 }
+                // 入力を無効化（変更不可にする）
+                input.disabled = true;
             });
-
-            // スコアの表示
-            const scoreDisplay = document.getElementById('score-display');
-            scoreDisplay.innerHTML = `<h2>結果: ${score} / ${quizData.length} 問 完答</h2><p>間違えたところを復習しましょう。</p>`;
-            scoreDisplay.style.display = 'block';
             
-            // ボタンを隠す
-            document.getElementById('submit-btn').style.display = 'none';
-
-            // 一番上へスクロール
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // ボタンの表示を変更して無効化する
+            btn.innerText = "回答済み";
+            btn.disabled = true;
         }
 
         // 初期描画
