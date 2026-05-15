@@ -3,488 +3,417 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>「檸檬」考査対策アプリ</title>
+    <title>もちひめ - 舞姫テスト対策</title>
     <style>
+        :root {
+            --primary-color: #5d4037;
+            --bg-color: #f4f1ea;
+            --btn-hover: #795548;
+        }
         body {
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background-color: #f4f7f6;
+            font-family: "Hiragino Mincho ProN", "MS PMincho", serif;
+            background-color: var(--bg-color);
             color: #333;
-            line-height: 1.6;
+            display: flex;
+            justify-content: center;
             padding: 20px;
             margin: 0;
+            line-height: 1.6;
         }
         #app {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .description {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #666;
-        }
-        .question-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border: 1px solid #eaeaea;
-        }
-        .question-title {
-            margin-top: 0;
-            color: #2c3e50;
-            font-size: 1.1em;
-        }
-        .multi-notice {
-            display: inline-block;
-            background: #e74c3c;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.85em;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .option-label {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: #fdfdfd;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.2s;
-            word-break: break-all;
-        }
-        .option-label:hover {
-            background: #f1f1f1;
-        }
-        .option-label input {
-            margin-right: 10px;
-            transform: scale(1.2);
-        }
-        .result-icon {
-            font-weight: bold;
-            margin-left: auto;
-            padding-left: 10px;
-            white-space: nowrap;
-        }
-        .correct { color: #27ae60; }
-        .incorrect { color: #c0392b; }
-        .correct-bg { background-color: #e8f8f5 !important; border-color: #27ae60; }
-        .wrong-bg { background-color: #fdedec !important; border-color: #e74c3c; }
-        .missed-bg { background-color: #fef9e7 !important; border-color: #f1c40f; }
-
-        .check-btn {
-            display: block;
             width: 100%;
-            padding: 12px;
-            font-size: 1.1em;
-            font-weight: bold;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.3s;
+            max-width: 650px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .check-btn:hover {
-            background: #2980b9;
+        .screen { text-align: center; }
+        .hidden { display: none !important; }
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
         }
-        .check-btn:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
+        .input-group { margin: 20px 0; text-align: left; }
+        label { font-weight: bold; }
+        input[type="password"], textarea {
+            width: 100%; padding: 12px; margin-top: 8px;
+            border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+            font-family: inherit; font-size: 1rem;
         }
+        button {
+            background-color: var(--primary-color); color: white;
+            border: none; padding: 14px 24px; margin: 10px 0;
+            border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%;
+            transition: background-color 0.2s;
+            font-family: inherit;
+        }
+        button:hover:not(:disabled) { background-color: var(--btn-hover); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .choice-btn {
+            background-color: #fff; color: #333;
+            border: 2px solid var(--primary-color);
+            text-align: left; transition: 0.2s; margin-bottom: 10px;
+        }
+        .choice-btn:hover:not(:disabled) { background-color: #efebe9; }
+        
+        #progress { font-size: 0.9rem; color: #666; text-align: right; margin-bottom: 10px; }
+        #question-text {
+            font-size: 1.25rem; font-weight: bold; margin: 20px 0; text-align: left;
+            border-left: 5px solid var(--primary-color); padding-left: 15px;
+        }
+        #feedback {
+            margin-top: 20px; padding: 15px; border-radius: 4px;
+            background: #f9f9f9; text-align: left; border: 1px solid #ddd;
+        }
+        #result-label { font-weight: bold; font-size: 1.3rem; margin-bottom: 10px; }
+        .score-display { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin: 20px 0; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>「檸檬」考査対策アプリ</h1>
-        <p class="description">各問題ごとに「回答する」ボタンを押して正誤を確認してください。</p>
-        
-        <div id="quiz-container"></div>
+        <div id="setup-screen" class="screen">
+            <h1>もちひめ</h1>
+            <p>森鴎外「舞姫」定期考査対策アプリ</p>
+            <div class="input-group">
+                <label for="api-key">Gemini API Key:</label>
+                <input type="password" id="api-key" placeholder="空欄ならオフラインモード（3択のみ）">
+            </div>
+            <button onclick="app.startMenu()">開始する</button>
+        </div>
+
+        <div id="menu-screen" class="screen hidden">
+            <h1>メニュー</h1>
+            <p id="mode-status"></p>
+            <button onclick="app.startMode('choice')">3択クイズモード</button>
+            <button id="desc-btn" onclick="app.startMode('desc')">記述演習モード (オンライン)</button>
+            <button onclick="location.reload()" style="background-color: #777;">戻る</button>
+        </div>
+
+        <div id="quiz-screen" class="screen hidden">
+            <div id="progress"></div>
+            <div id="question-text"></div>
+            
+            <div id="choice-container" class="hidden">
+                <button class="choice-btn" onclick="app.selectChoice(0)"></button>
+                <button class="choice-btn" onclick="app.selectChoice(1)"></button>
+                <button class="choice-btn" onclick="app.selectChoice(2)"></button>
+            </div>
+
+            <div id="desc-container" class="hidden">
+                <textarea id="user-answer" placeholder="ここに解答を入力..." rows="4"></textarea>
+                <button id="submit-desc-btn" onclick="app.submitDesc()">採点する</button>
+            </div>
+
+            <div id="feedback" class="hidden">
+                <div id="result-label"></div>
+                <div id="explanation" style="white-space: pre-wrap;"></div>
+                <button id="next-btn" onclick="app.nextQuestion()">次へ</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="screen hidden">
+            <h1>学習終了</h1>
+            <div id="final-score" class="score-display"></div>
+            <button onclick="app.returnToMenu()">メニューに戻る</button>
+        </div>
     </div>
 
-    <script>
-        // 問題データ (正解とダミー選択肢)
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
         const quizData = [
             {
-                question: "「街から街を浮浪し続けていた」なぜ？",
-                type: "single",
-                options: [
-                    { text: "得体の知れない不吉な塊に押さえつけられ心が不安定で、落ち着いてじっとしていられない。", isCorrect: true },
-                    { text: "京都の街並みの美しさに魅了され、少しでも多くの景色を目に焼き付けたかったから。", isCorrect: false },
-                    { text: "友人たちとの約束を忘れてしまい、あてもなく待ち合わせ場所を探し回っていたから。", isCorrect: false },
-                    { text: "新しい小説の題材を見つけるため、人々の生活を観察して歩いていたから。", isCorrect: false },
-                    { text: "借金取りから逃れるため、一箇所に留まることができなかったから。", isCorrect: false }
-                ]
+                loc: "P212 L1",
+                q: "熾熱灯を「いたづらなり」と感じた理由は？",
+                ans: "船内の明るさが沈んだ気分にそぐわず、広い部屋に一人の孤独感や虚無感を強調したため。",
+                memo: "熾熱灯がまぶしく、そこに似つかわない気分で落ち込んでいる。広い中等室にたった一人でいる空虚さや寂しさ、虚無感の暗示。",
+                distractors: ["灯りが暗すぎて周囲の様子がよく分からず不安になったから。","帰国の喜びを分かち合える友人が船内に一人もいなかったため。","電灯の文明的な輝きが古風なドイツの風景と乖離していたから。","船が激しく揺れており灯りを見ていると気分が悪くなったため。","自分の将来が明るいものであると確信し光が眩しく感じたから。"]
             },
             {
-                question: "「みすぼらしくて美しいもの」の例。",
-                type: "multi",
-                options: [
-                    { text: "崩れかかった街", isCorrect: true },
-                    { text: "汚い洗濯物が干してある", isCorrect: true },
-                    { text: "ガラクタが転がしてある部屋が覗く", isCorrect: true },
-                    { text: "裏通り", isCorrect: true },
-                    { text: "華やかなショーウィンドウ", isCorrect: false }
-                ]
+                loc: "P212 L10",
+                q: "日記が白紙のままなのはなぜか？",
+                ans: "渡欧時の期待に満ちた心境と、現在の目的を失い虚しさを抱える心境が対照的だから。",
+                memo: "「行きはいっぱい書いたが、帰りは書いていない」こと。初めて見た刺激や期待感（行き）と、現在の虚しい心持ち（帰り）が対照的である。",
+                distractors: ["多忙な日々の中で日記を記す物理的な時間が取れなかったから。","ドイツでの出来事が多すぎて何から書けばよいか迷ったから。","帰国後の出世が約束されており過去を振り返る必要がなかったため。","エリスとの思い出を他人に知られないよう証拠を隠滅したかったから。","以前のような情熱的な文章を書く気力が今の自分にはないから。"]
             },
             {
-                question: "「錯覚を起こそうと努める」なぜ？",
-                type: "single",
-                options: [
-                    { text: "現実の京都での生活が憂鬱かつ不安定であるため、現実逃避をしていた。", isCorrect: true },
-                    { text: "友人の書いた詩の世界に没入し、自分がその主人公であるかのように思い込もうとした。", isCorrect: false },
-                    { text: "過去の輝かしい記憶を呼び起こすことで、未来への希望を見出そうとしていた。", isCorrect: false },
-                    { text: "丸善の店内に並ぶ高級品を手に入れた自分を想像し、優越感に浸りたかった。", isCorrect: false },
-                    { text: "病気による高熱のため、現実と夢の境界が曖昧になっていた。", isCorrect: false }
-                ]
+                loc: "P216 L7",
+                q: "なぜ留学中に外物を遮断したのか？",
+                ans: "国費留学生として出世という目標に集中し、誘惑を断つ器械的な自制心があったため。",
+                memo: "国費留学という名誉ある立場で、出世という本来の目標のための自制と誓いがあったから。ヨーロッパの美しさに心を動かされないよう誘惑を遮断していた。",
+                distractors: ["異国の文化に触れることで日本の伝統的な心を失うのが怖かったから。","現地の日本人学生たちとの交流を絶ち孤独に耐える訓練をするため。","語学の習得に専念するため娯楽や交友関係をすべて断ち切ったから。","法律の研究に没頭し政治的な動乱に巻き込まれないようにするため。","故郷の母との約束を守り一刻も早く学位を取得して帰国するため。"]
             },
             {
-                question: "「おはじき・南京玉が好きになった」なぜ？",
-                type: "single",
-                options: [
-                    { text: "大きくなり落魄れた現実と対照的。別世界のような楽しく爽やかな幼時の記憶を思い出す。", isCorrect: true },
-                    { text: "それらの持つ複雑な模様が、自身の内面にある不安や葛藤を正確に表していると感じたから。", isCorrect: false },
-                    { text: "高価な美術品よりも、安価で手に入りやすいものの中に真の芸術性を見出したから。", isCorrect: false },
-                    { text: "友人が集めているのを見て、対抗心から自分もより美しいものを集めたくなったから。", isCorrect: false },
-                    { text: "丸善で売られているような舶来品に対する、一種の反発心から。", isCorrect: false }
-                ]
+                loc: "P218 L15",
+                q: "昨日までの我ならぬ我とは？",
+                ans: "自分の意志を持たず、他人の命令に従うだけの受動的で器械的な人間であるということ。",
+                memo: "自分の判断を持たず、命令に従う受動的・器械的な人物。「人のままに用いるべき器械」として、主体性なく生きてきた。",
+                distractors: ["自分の非を認めず常に他人のせいにして生きてきた傲慢な人間であるということ。","感情を押し殺しエリスへの愛さえも否定しようとしていた冷酷な人間であるということ。","故郷を捨て西洋の思想に完全に染まってしまった非国民的な人間であるということ。","常に将来の不安に怯え決断を下すことを避けてきた臆病な人間であるということ。","周囲の期待に応えることだけを考え学問の真理を軽視した浅はかな人間であるということ。"]
             },
             {
-                question: "「（丸善は）重苦しい場所に過ぎなかった」なぜ？",
-                type: "single",
-                options: [
-                    { text: "落魄れた私と、丸善で売られている高級品や真面目に働く人との対比からプレッシャーを感じる。", isCorrect: true },
-                    { text: "店内の照明が暗く、常に陰鬱な雰囲気が漂っていたから。", isCorrect: false },
-                    { text: "店員たちの態度が冷たく、客として歓迎されていないように感じたから。", isCorrect: false },
-                    { text: "かつて恋人と一緒に訪れた場所であり、辛い別れを思い出してしまうから。", isCorrect: false },
-                    { text: "欲しい本がいつも品切れで、落胆することばかりだったから。", isCorrect: false }
-                ]
+                loc: "P218 L15",
+                q: "まことの我とは？",
+                ans: "自我に目覚め、自分の主張を持ち、自ら主体的に学問や生き方を選択する人間であるということ。",
+                memo: "自分の意見を主張し、主体性のある生き方。「自我の目ざめ」や「覚醒」を経て、自ら学問を選択するような人物。",
+                distractors: ["日本の古い習慣を否定し西洋的な個人主義を完璧に体現する人間であるということ。","組織の利益よりも自分の愛する家族や恋人を最優先にする人間であるということ。","官長からの命令を拒絶しドイツに永住して芸術家を目指す人間であるということ。","他人の評価を一切気にせず自分の欲望のままに行動する野性的な人間であるということ。","過去の栄光をすべて捨て去り無一文から再出発しようとする勇敢な人間であるということ。"]
             },
             {
-                question: "「借金取りの亡霊のよう」なぜ？",
-                type: "single",
-                options: [
-                    { text: "しつこく追いかけ、取り憑いて苦しめてくることの比喩。", isCorrect: true },
-                    { text: "姿が見えないのに、どこからか不気味な声だけが聞こえてくることの比喩。", isCorrect: false },
-                    { text: "夜中にふと目覚めると、枕元にぼんやりと立っていることの比喩。", isCorrect: false },
-                    { text: "忘れた頃にやってきて、過去の過ちを蒸し返すことの比喩。", isCorrect: false },
-                    { text: "お金を払うまで一歩も動こうとしない強情さの比喩。", isCorrect: false }
-                ]
+                loc: "P220 L4",
+                q: "仲間に嫉まれ嫌われた理由は？",
+                ans: "豊太郎の付き合いが悪く、真面目すぎて出し抜こうとしていると誤解されたため。",
+                memo: "豊太郎が付き合いが悪く、頑固で真面目すぎて出し抜こうとしていると周囲に誤解され、嫌われていたため。実際は勇気がなく臆病だった。",
+                distractors: ["豊太郎が他の留学生よりも圧倒的に優れた成績を収めていたため。","豊太郎が美人のエリスを独占していることへの反感があったから。","日本の政府高官と密に連絡を取りスパイのような動きをしていたから。","豊太郎の性格が非常に攻撃的で周囲と頻繁に衝突していたから。","自分が裕福であることを鼻にかけ周囲を見下す態度をとったから。"]
             },
             {
-                question: "「私はここから彷徨い出なければならなかった」なぜ？",
-                type: "single",
-                options: [
-                    { text: "友達が学校に出て1人取り残されると、空虚さや孤独さに耐えられない。", isCorrect: true },
-                    { text: "部屋の中にいると、不吉な塊がどんどん大きくなっていくように感じたから。", isCorrect: false },
-                    { text: "大家から家賃の督促を受け、居留守を使うのが限界に達したから。", isCorrect: false },
-                    { text: "素晴らしいインスピレーションが湧き、すぐにでも書き留めなければならないと思ったから。", isCorrect: false },
-                    { text: "檸檬の匂いが部屋中に充満し、息苦しくなってしまったから。", isCorrect: false }
-                ]
+                loc: "P227 L6",
+                q: "免官になった直接の理由は？",
+                ans: "専門外の学問に耽って任務を疎かにし、さらにエリスとの交際を密告されたため。",
+                memo: "豊太郎が与えられた仕事（学問）から離れたことを許されなかった。また、エリスとの交際を密告されたことも重なり、免官となった。",
+                distractors: ["毎日酒場に入り浸り留学費用をすべて使い果たしてしまったため。","官長に直接抗議しドイツの法律を批判する論文を発表したため。","帰国命令を無視して現地の大学に無断で編入しようとしたため。","授業料を滞納し大学側から日本政府にクレームが入ったため。","エリスとの結婚を強行し国費留学生の規律に大きく違反したため。"]
             },
             {
-                question: "いたたまれない",
-                type: "single",
-                options: [
-                    { text: "もうそこにじっとしていられない。", isCorrect: true },
-                    { text: "恥ずかしくて顔から火が出るようだ。", isCorrect: false },
-                    { text: "悲しくて涙が止まらない。", isCorrect: false },
-                    { text: "怒りで我を忘れてしまう。", isCorrect: false },
-                    { text: "嬉しくて思わず跳び上がってしまう。", isCorrect: false }
-                ]
+                loc: "P227 L6",
+                q: "一身の大事とは何か？",
+                ans: "免官や母の死に直面し、帰国するかエリスを選ぶか決断しなければならない人生の岐路のこと。",
+                memo: "免官されたこと、母の死、そして一週間以内に帰国を決断しなければならない人生の岐路。汚名を着るか、エリスと別れるかの葛藤。",
+                distractors: ["日本での莫大な借金返済と新しい就職先を同時に探さなければならない状況のこと。","不当な免官に対する裁判への出廷と名誉回復のための戦いのこと。","ドイツ国籍の取得と現地での永住権獲得に向けた複雑な手続きのこと。","大臣への直接の謝罪と許しを乞うための過酷な旅路のこと。","エリスの病気を治すための高額な治療費の工面と看病のこと。"]
             },
             {
-                question: "「（果物屋が）最も好きな店であった」なぜ？",
-                type: "single",
-                options: [
-                    { text: "この店は庶民的な高級でない店。「みすぼらしく美しい」に一致した。", isCorrect: true },
-                    { text: "店主が親切で、いつもおまけをしてくれたから。", isCorrect: false },
-                    { text: "並んでいる果物がどれも新鮮で、輝くように見えたから。", isCorrect: false },
-                    { text: "亡くなった母がよく連れて行ってくれた、思い出の場所だったから。", isCorrect: false },
-                    { text: "店の奥から聞こえてくる音楽が、心を落ち着かせてくれたから。", isCorrect: false }
-                ]
+                loc: "P230 L3",
+                q: "余を助けしとはどういうことか？",
+                ans: "親友の相沢が、生活のために新しい仕事を紹介してくれたこと。",
+                memo: "相沢が豊太郎に新しい仕事を紹介してくれたこと。",
+                distractors: ["親友の相沢が多額の借金を肩代わりしてくれたこと。","親友の相沢がエリスの重い病気の治療費を援助してくれたこと。","親友の相沢が日本へ帰国するための船賃を支払ってくれたこと。","親友の相沢が大臣に対して豊太郎の無実を強く訴えてくれたこと。","親友の相沢がドイツ語の個人指導を引き受け生活を支えてくれたこと。"]
             },
             {
-                question: "「そこの家の美しいのは夜だった」なぜ？",
-                type: "single",
-                options: [
-                    { text: "真っ暗な夜間はコントラストが際立って店の明かりが目立ち、並んでいる品物が映える。", isCorrect: true },
-                    { text: "夜になると店主が特別な果物を並べ始め、それがまるで宝石のように輝いていたから。", isCorrect: false },
-                    { text: "周囲が静まり返ることで、果物の放つ芳醇な香りがより一層強く感じられたから。", isCorrect: false },
-                    { text: "夜だけ開く不思議な店で、訪れる客たちも皆どこか秘密めいていたから。", isCorrect: false },
-                    { text: "暗闇の中に浮かび上がる店の外観が、まるで西洋の古いお城のように見えたから。", isCorrect: false }
-                ]
+                loc: "P238 L1",
+                q: "比しがたき心情とは？",
+                ans: "決断を下したものの、エリスへの罪悪感や将来への孤独が混ざり合った複雑な心境。",
+                memo: "自分で決断したものの、エリスに対する後ろめたさ、後悔、将来へのゾッとするような孤独感や寂しさが混ざり合った心境。",
+                distractors: ["本当にドイツに残るべきか日本に帰るべきか未だに答えが出せない焦燥感。","相沢の順調な出世に対する激しい嫉妬と自分への惨めな思いが交差する心境。","新しい恋人への期待と過去の未練が入り混じった落ち着かない心境。","帰国後の輝かしい出世への期待と本当に実現できるかという疑念が入り混じった心境。","自分の文学的才能への疑念と周囲からの評価に対する恐怖が混ざり合った心境。"]
             },
             {
-                question: "「それを一つだけ買うことにした」なぜ？",
-                type: "multi",
-                options: [
-                    { text: "檸檬の単純な色", isCorrect: true },
-                    { text: "檸檬の丈の詰まった紡錘形の格好", isCorrect: true },
-                    { text: "ポケットに入っていた全財産で買えるのがそれ一つだけだったから。", isCorrect: false },
-                    { text: "とても良い香りがして、食欲をそそられたから。", isCorrect: false },
-                    { text: "店主から特別に安くすると勧められたから。", isCorrect: false }
-                ]
+                loc: "P238 L7",
+                q: "なぜ十五分で絶つと答えたのか？",
+                ans: "相沢の正論に圧倒され、深く考えず反射的に承諾した豊太郎の心の弱さが表れたため。",
+                memo: "信頼する相沢に頼まれ、深く考えずに承諾してしまった。主体性のなさと「弱き心」が表れている。",
+                distractors: ["エリスへの愛がすでに冷めており一刻も早く別れたいと願っていたため。","日本の母が病に倒れたという知らせを聞き気が動転していたため。","早く大臣に会って自分の名誉を回復したいという野心が勝ったため。","船の出発時刻が迫っておりじっくりと考える物理的な時間がなかったため。","ドイツの厳しい寒さに耐えきれず一刻も早く暖かい日本へ帰りたかったため。"]
             },
             {
-                question: "不吉な塊が檸檬で紛らわされたのをどう表現した？",
-                type: "single",
-                options: [
-                    { text: "「逆説的な本当であった」", isCorrect: true },
-                    { text: "「一筋の光明が差した」", isCorrect: false },
-                    { text: "「狐につままれたようであった」", isCorrect: false },
-                    { text: "「魔法にかかったようであった」", isCorrect: false },
-                    { text: "「劇的な変化であった」", isCorrect: false }
-                ]
+                loc: "P243 L2",
+                q: "足を縛してと誇りしが伝えていることは？",
+                ans: "自由だと思っていたが、結局は官僚社会の人間関係に縛られた器械にすぎなかったという自覚。",
+                memo: "主体的・自由に生きていると自負していたが、実際は官僚の人間関係に縛られており、結局は器械的な人物に過ぎなかったという自覚。",
+                distractors: ["貧困ゆえに行動が制限され結局は金に縛られた人生であったという自覚。","法律の知識がいくらあっても現実の困難な状況には全く役に立たなかったという自覚。","エリスの病状に振り回され自分の思い通りに生きることは不可能であったという自覚。","語学力が不足しているため現地の社会に深く入り込むことができなかったという自覚。","自分の体力が衰えており長旅に耐えられるような強い精神力を持っていなかったという自覚。"]
             },
             {
-                question: "「軽やかな興奮に弾んで、一種誇りかな気持ち」なぜ？",
-                type: "multi",
-                options: [
-                    { text: "昔からずっと探していたものの様に、しっくり、ピタッとハマった。", isCorrect: true },
-                    { text: "憂鬱が檸檬で緩んだ。", isCorrect: true },
-                    { text: "自分が丸善にいる人々よりも高尚な存在であると感じた。", isCorrect: false },
-                    { text: "檸檬の素晴らしい香りが周囲の客の注目を集めた。", isCorrect: false },
-                    { text: "友人に見せびらかすための最高の品を手に入れたと思った。", isCorrect: false }
-                ]
+                loc: "P244 L1",
+                q: "狼狽絶断の思いとは？",
+                ans: "エリスへの愛と、郷里や栄達への執着の間で揺れ、両立不能な状況に追い詰められた苦悩。",
+                memo: "エリスへの愛情と、郷里を思う心や栄達を求める心との間の激しい葛藤。両立できない（エリスを連れて帰れない）という思い。",
+                distractors: ["学問への情熱と友人への義理のどちらを優先すべきか分からなくなった苦悩。","貧困生活を続けるか裕福な支援者の援助を受けるかで心が引き裂かれる苦悩。","日本への激しい憎悪とドイツへの深い愛着との間で精神が崩壊していく苦悩。","過去の栄光にしがみつく心と新しい未来を切り開く勇気との激しい葛藤。","自分が本当に愛しているのはエリスなのか別の女性なのか分からなくなった苦悩。"]
             },
             {
-                question: "「つまりはこの重さ（檸檬）なんだな」どういうこと？",
-                type: "single",
-                options: [
-                    { text: "この重さは全ての美しいもの、善いものの重さで、「美」「善」という概念の象徴。", isCorrect: true },
-                    { text: "檸檬の重さが、これまでの人生で背負ってきた苦悩の重さとちょうど同じだったということ。", isCorrect: false },
-                    { text: "物理的な重さではなく、その檸檬が持つ金銭的な価値の重さを実感したということ。", isCorrect: false },
-                    { text: "人間が持つべき謙虚さや誠実さの重みを、檸檬を通じて悟ったということ。", isCorrect: false },
-                    { text: "世界のすべてがこの小さな檸檬の重さに集約されているという、誇大妄想的な感覚。", isCorrect: false }
-                ]
+                loc: "P245 L10",
+                q: "なぜ帰国を承諾したのか？",
+                ans: "相沢の信頼を裏切れず、また出世の機会を逃すことを恐れた心の弱さによるため。",
+                memo: "相沢の言葉が正論で断れず、また相沢の信頼を裏切りたくなかった。この機会を逃すと出世の道が閉ざされるという「弱き心」による。",
+                distractors: ["日本の気候が恋しくなりドイツでの生活にもう限界を感じていたため。","エリスから突然別れを告げられドイツに留まる理由が完全に失われたため。","大臣から直接脅迫を受け従わなければ命の保証はないと恐怖を感じたため。","帰国のための船賃が今回に限り無料になると聞き経済的理由で決断したため。","日本の食事が無性に食べたくなり衝動的に帰国を決意してしまったため。"]
             },
             {
-                question: "「平常あんなに避けていた丸善」なぜ？",
-                type: "single",
-                options: [
-                    { text: "華美と贅沢の象徴である丸善は、ひたすら気づまりな場所でしかなくなっていたから。", isCorrect: true },
-                    { text: "過去に丸善で店員とトラブルを起こし、出入り禁止になっていたから。", isCorrect: false },
-                    { text: "丸善の店内に並ぶ本が高価すぎて、今の自分には手が出ないと分かっていたから。", isCorrect: false },
-                    { text: "丸善に行くと、昔の恋人と鉢合わせする可能性が高かったから。", isCorrect: false },
-                    { text: "丸善特有の薬品のような匂いが、どうにも好きになれなかったから。", isCorrect: false }
-                ]
+                loc: "P246 L3",
+                q: "激しき寒さの暗示は？",
+                ans: "罪悪感や後悔が身に沁み、心が凍りつくような不安の中にいることの象徴。",
+                memo: "罪悪感や慙愧の念、激しい後悔が身に沁みていること。心が冷え込み、不安を感じている。",
+                distractors: ["暖房設備が完全に故障しており物理的な寒さに震えていることの象徴。","ロシアの冬の厳しさを思い出しエリスの体調を極度に案じている状態の象徴。","自分が重い病に侵されており死期が近いことを本能的に察した恐怖の象徴。","周囲の冷ややかな視線に耐えきれず完全に孤立してしまった状況の象徴。","ドイツの美しい雪景色を最後にもう一度目に焼き付けておきたいという未練の象徴。"]
             },
             {
-                question: "「（丸善に）易々と入れるように思えた」なぜ？",
-                type: "multi",
-                options: [
-                    { text: "檸檬により不吉な塊が緩み、幸福で満たされていた。", isCorrect: true },
-                    { text: "檸檬は丸善の重苦しさをはねのける。", isCorrect: true },
-                    { text: "給料日直後で、財布の中に十分なお金があったから。", isCorrect: false },
-                    { text: "いつも厳しい入り口の警備員が、その日は不在だったから。", isCorrect: false },
-                    { text: "友人が店内で待っているという安心感があったから。", isCorrect: false }
-                ]
+                loc: "P248 L3",
+                q: "エリスが発狂した理由は？",
+                ans: "豊太郎が帰国を約束していたと知り、愛する者に裏切られた衝撃を受けたため。",
+                memo: "エリスと別れて帰国するという豊太郎の約束を知り、愛する者に欺かれ、裏切られたという強い衝撃（打撃）を受けたため。",
+                distractors: ["極度の貧困生活による栄養失調が原因で脳に重大な障害を負ってしまったため。","豊太郎との間に授かった子供を不慮の事故で流産してしまった悲しみのため。","相沢から直接暴言を浴びせられ精神的な限界をはるかに超えてしまったため。","近所の心ない噂話によって追い詰められ誰も信じられなくなってしまったため。","警察の厳しい取り調べを受け豊太郎が犯罪者だと完全に誤解してしまったため。"]
             },
             {
-                question: "「（丸善に）ズカズカ入っていった」そのあとの心情は？",
-                type: "single",
-                options: [
-                    { text: "幸福な感情は逃げ、心が満たされず余計に不吉なかたまりを感じている。", isCorrect: true },
-                    { text: "思い切って入ってみて良かったという、晴れやかな達成感に包まれている。", isCorrect: false },
-                    { text: "店員に咎められるのではないかという、強い不安と恐怖を感じている。", isCorrect: false },
-                    { text: "すぐに欲しいものを見つけ出し、意気揚々と買い物を楽しんでいる。", isCorrect: false },
-                    { text: "周囲の客の優雅な態度に圧倒され、自分の身なりを恥ずかしく思っている。", isCorrect: false }
-                ]
+                loc: "P249 L8",
+                q: "相沢のどのような点を評価しているか？",
+                ans: "自分のために尽力し、一度閉ざされた出世の道へ戻してくれた点。",
+                memo: "豊太郎が大臣の信頼を得られるよう尽力し、出世の道に戻してくれた点。",
+                distractors: ["自分の借金をすべて立て替え経済的な不安を取り除いてくれた点。","エリスを最後まで熱心に説得し円満な別れを演出してくれた点。","毎日美味しい料理を作って病床の自分を献身的に看病してくれた点。","自分の代わりに素晴らしい論文を執筆し学位を取得させてくれた点。","日本から遠路はるばる毎日見舞いに来て心の支えになってくれた点。"]
             },
             {
-                question: "「（画本を見た後周囲を見渡す）変にそぐわない気持ち」どんなもの？",
-                type: "single",
-                options: [
-                    { text: "日常と違う別世界を見たあとに丸善の日常を見渡すことで、ギャップを感じている。", isCorrect: true },
-                    { text: "画本の内容があまりにも退屈で、時間を無駄にしたという後悔の気持ち。", isCorrect: false },
-                    { text: "美しい画本の世界に閉じこもりたいという、強い逃避願望。", isCorrect: false },
-                    { text: "周囲の客たちが皆、自分よりも高価な本を見ていることへの嫉妬心。", isCorrect: false },
-                    { text: "自分だけがこの画本の真の価値を理解しているという、優越感と孤独感。", isCorrect: false }
-                ]
-            },
-            {
-                question: "「（画本を見た後周囲を見渡す）変にそぐわない気持ち」今井正道の例えとは？",
-                type: "single",
-                options: [
-                    { text: "映画の終わった直後に、現実に引き戻される感覚。", isCorrect: true },
-                    { text: "長い夢から覚めた直後に、自分がどこにいるのか分からなくなる感覚。", isCorrect: false },
-                    { text: "お祭りが終わった後の、静まり返った神社に一人残された感覚。", isCorrect: false },
-                    { text: "激しい運動をした直後に、全身の力が抜けていく感覚。", isCorrect: false },
-                    { text: "素晴らしい音楽を聴き終えた後、しばらく余韻に浸っている感覚。", isCorrect: false }
-                ]
-            },
-            {
-                question: "「（城の頂上に）檸檬を据え付けた」なぜ？",
-                type: "single",
-                options: [
-                    { text: "現状の憂鬱さを象徴する、画本の複雑な色の頂上に、これを打ち消す檸檬を選んだ。", isCorrect: true },
-                    { text: "単に一番上に乗せた方が、バランスが良くて見栄えがすると思ったから。", isCorrect: false },
-                    { text: "丸善の店員にいたずらを仕掛けるため、一番目立つ場所に置いた。", isCorrect: false },
-                    { text: "檸檬を神聖なものとして祀り上げるための、儀式的な行為だった。", isCorrect: false },
-                    { text: "檸檬の黄色が、画本の表紙の青色と最も美しいコントラストを生み出すから。", isCorrect: false }
-                ]
-            },
-            {
-                question: "「私をギョッとさせた」なぜ？",
-                type: "single",
-                options: [
-                    { text: "自分やアイデア自体に対する驚き。", isCorrect: true },
-                    { text: "突然背後から声をかけられ、誰かに見られていたのかと焦ったため。", isCorrect: false },
-                    { text: "檸檬を置いた瞬間、画本が崩れ落ちて大きな音を立てたため。", isCorrect: false },
-                    { text: "檸檬の色が、自分が思っていたよりもはるかに鮮やかだったため。", isCorrect: false },
-                    { text: "自分の行動が、かつての友人が言っていたことと全く同じだと気づいたため。", isCorrect: false }
-                ]
-            },
-            {
-                question: "「変にくすぐったい気持ち」どんな気持ち？",
-                type: "multi",
-                options: [
-                    { text: "してやったりの満足。", isCorrect: true },
-                    { text: "楽しんでいる。", isCorrect: true },
-                    { text: "悪戯をしたことへの照れくささ", isCorrect: true },
-                    { text: "誰かに褒めてもらいたいという承認欲求", isCorrect: false },
-                    { text: "すぐに見つかって怒られるのではないかという恐怖", isCorrect: false }
-                ]
+                loc: "P249 L9",
+                q: "相沢を憎んでいるのはなぜか？",
+                ans: "相沢が良友として尽力した結果、エリスを廃人に追い込む決定打を作った張本人だから。",
+                memo: "相沢のおかげで出世の道に戻れたものの、それが結果的にエリスを廃人にする決定的な原因となったため。良友であり恩人だが、憎しみの対象でもあるという逆説。",
+                distractors: ["豊太郎の金を密かに横領し私腹を肥やしていたことが発覚した張本人だから。","エリスに横恋慕し豊太郎がいない間に強引に関係を持とうとした張本人だから。","大臣に嘘の報告をして豊太郎の評判を意図的に貶めようとした張本人だから。","帰国の船のチケットを勝手にキャンセルし豊太郎を孤立させた張本人だから。","豊太郎をドイツに置き去りにして自分だけ先に出世してしまった張本人だから。"]
             }
         ];
 
-        // 配列をシャッフルする関数
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+        window.app = {
+            apiKey: "",
+            genAI: null,
+            currentIndex: 0,
+            score: 0,
+            mode: "",
+            correctIndex: 0,
 
-        // アプリの描画
-        function renderQuiz() {
-            const container = document.getElementById('quiz-container');
-            
-            quizData.forEach((q, index) => {
-                const card = document.createElement('div');
-                card.className = 'question-card';
-                card.id = `q-card-${index}`;
+            startMenu() {
+                this.apiKey = document.getElementById('api-key').value.trim();
+                const status = document.getElementById('mode-status');
+                const descBtn = document.getElementById('desc-btn');
 
-                let html = `<h3 class="question-title">問${index + 1}. ${q.question}</h3>`;
-                
-                if (q.type === 'multi') {
-                    html += `<div class="multi-notice">【複数選択】</div>`;
+                if (this.apiKey) {
+                    this.genAI = new GoogleGenerativeAI(this.apiKey);
+                    status.innerText = "オンラインモード";
+                    descBtn.disabled = false;
+                } else {
+                    this.genAI = null;
+                    status.innerText = "オフラインモード（記述不可）";
+                    descBtn.disabled = true;
                 }
+                this.showScreen('menu-screen');
+            },
 
-                html += `<div class="options">`;
-                
-                // 選択肢をシャッフル
-                const shuffledOptions = shuffleArray([...q.options]);
+            showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
 
-                shuffledOptions.forEach((opt, optIndex) => {
-                    const inputType = q.type === 'multi' ? 'checkbox' : 'radio';
-                    const name = q.type === 'multi' ? `q${index}_${optIndex}` : `q${index}`;
-                    const id = `q${index}_opt${optIndex}`;
-                    
-                    html += `
-                        <label class="option-label" for="${id}">
-                            <input type="${inputType}" name="${name}" id="${id}" value="${opt.isCorrect}">
-                            ${opt.text}
-                            <span class="result-icon" id="result-${id}"></span>
-                        </label>
-                    `;
-                });
+            async startMode(m) {
+                this.mode = m;
+                this.currentIndex = 0;
+                this.score = 0;
+                this.showScreen('quiz-screen');
+                await this.loadQuestion();
+            },
 
-                html += `</div>`;
-                
-                // 問題ごとの回答ボタンを追加
-                html += `<button class="check-btn" onclick="checkSingleAnswer(${index})" id="btn-${index}">回答する</button>`;
-                
-                card.innerHTML = html;
-                container.appendChild(card);
-            });
-        }
+            async loadQuestion() {
+                const data = quizData[this.currentIndex];
+                document.getElementById('progress').innerText = `${this.currentIndex + 1} / ${quizData.length}`;
+                document.getElementById('question-text').innerText = data.q;
+                document.getElementById('feedback').classList.add('hidden');
+                document.getElementById('user-answer').value = "";
+                document.getElementById('submit-desc-btn').disabled = false;
 
-        // 1問ごとの回答判定
-        function checkSingleAnswer(index) {
-            const q = quizData[index];
-            const card = document.getElementById(`q-card-${index}`);
-            const inputs = card.querySelectorAll('input');
-            const btn = document.getElementById(`btn-${index}`);
-            
-            // 少なくとも1つ選択されているかチェック
-            const hasSelection = Array.from(inputs).some(input => input.checked);
-            if (!hasSelection) {
-                alert("選択肢を選んでください。");
-                return;
-            }
+                if (this.mode === 'choice') {
+                    document.getElementById('choice-container').classList.remove('hidden');
+                    document.getElementById('desc-container').classList.add('hidden');
+                    await this.prepareChoices(data);
+                } else {
+                    document.getElementById('choice-container').classList.add('hidden');
+                    document.getElementById('desc-container').classList.remove('hidden');
+                }
+            },
 
-            inputs.forEach(input => {
-                const isCorrectOption = input.value === 'true';
-                const isChecked = input.checked;
-                const resultIcon = document.getElementById(`result-${input.id}`);
-                const label = input.closest('label');
-                
-                if (q.type === 'multi') {
-                    // 複数選択の場合
-                    if (isCorrectOption) {
-                        if (isChecked) {
-                            resultIcon.innerHTML = '⭕️';
-                            resultIcon.className = 'result-icon correct';
-                            label.classList.add('correct-bg');
-                        } else {
-                            resultIcon.innerHTML = '❌ 選択漏れ';
-                            resultIcon.className = 'result-icon incorrect';
-                            label.classList.add('missed-bg');
-                        }
-                    } else {
-                        if (isChecked) {
-                            resultIcon.innerHTML = '❌ 不正解';
-                            resultIcon.className = 'result-icon incorrect';
-                            label.classList.add('wrong-bg');
-                        }
+            async prepareChoices(data) {
+                const btns = document.querySelectorAll('.choice-btn');
+                btns.forEach(b => { b.innerText = "生成中..."; b.disabled = true; b.style.backgroundColor = ""; });
+
+                let finalChoices = [];
+                if (this.genAI) {
+                    try {
+                        const modelLite = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+                        const modelPro = this.genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+
+                        const [distRes, paraRes] = await Promise.all([
+                            modelLite.generateContent(`問題: ${data.q}\n正解: ${data.ans}\nこの正解に近いが誤りである選択肢を2つ作ってください。文末を「〜ため。」などの正解の形式に合わせてください。出力形式: 誤答1|誤答2`),
+                            modelPro.generateContent(`「${data.ans}」という文章を、意味を変えずにより自然な表現で1つ言い換えてください。文末は変えないでください。`)
+                        ]);
+
+                        const dists = distRes.response.text().split('|');
+                        const paraphrased = paraRes.response.text().trim();
+                        finalChoices = [paraphrased, dists[0].trim(), dists[1].trim()];
+                    } catch(e) {
+                        finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
                     }
                 } else {
-                    // 単一選択の場合
-                    if (isCorrectOption) {
-                        label.classList.add('correct-bg');
-                        if (isChecked) {
-                            resultIcon.innerHTML = '⭕️ 正解';
-                            resultIcon.className = 'result-icon correct';
-                        } else {
-                            resultIcon.innerHTML = '👈 正解';
-                            resultIcon.className = 'result-icon correct';
-                        }
-                    } else {
-                        if (isChecked) {
-                            resultIcon.innerHTML = '❌ 不正解';
-                            resultIcon.className = 'result-icon incorrect';
-                            label.classList.add('wrong-bg');
-                        }
-                    }
+                    finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
                 }
-                // 入力を無効化（変更不可にする）
-                input.disabled = true;
-            });
-            
-            // ボタンの表示を変更して無効化する
-            btn.innerText = "回答済み";
-            btn.disabled = true;
-        }
 
-        // 初期描画
-        window.onload = renderQuiz;
+                const mapped = finalChoices.map((t, i) => ({ t, correct: i === 0 })).sort(() => Math.random() - 0.5);
+                this.correctIndex = mapped.findIndex(m => m.correct);
+                btns.forEach((b, i) => {
+                    b.innerText = mapped[i].t;
+                    b.disabled = false;
+                });
+            },
+
+            selectChoice(idx) {
+                const btns = document.querySelectorAll('.choice-btn');
+                btns.forEach(b => b.disabled = true);
+                const win = idx === this.correctIndex;
+                if(win) { this.score++; btns[idx].style.backgroundColor = "#c8e6c9"; }
+                else { btns[idx].style.backgroundColor = "#ffcdd2"; btns[this.correctIndex].style.backgroundColor = "#c8e6c9"; }
+                this.showFeedback(win, `【解説】\n${quizData[this.currentIndex].memo}`);
+            },
+
+            async submitDesc() {
+                const userAns = document.getElementById('user-answer').value.trim();
+                if(!userAns || !this.genAI) return;
+
+                document.getElementById('submit-desc-btn').disabled = true;
+                document.getElementById('result-label').innerText = "採点中...";
+                document.getElementById('feedback').classList.remove('hidden');
+
+                try {
+                    const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                    const prompt = `森鴎外『舞姫』の記述問題の採点を行ってください。
+                    問題: ${quizData[this.currentIndex].q}
+                    模範解答: ${quizData[this.currentIndex].ans}
+                    授業メモ（採点ポイント）: ${quizData[this.currentIndex].memo}
+                    生徒の解答: ${userAns}
+
+                    採点基準:
+                    1. 授業メモにある主要なキーワードや論理的背景が含まれていれば、概ね80点としてください。
+                    2. 表現がより正確で、文脈に即している場合はさらに加点してください。
+                    3. 文末表現の不備は軽微な減点に留めてください。
+
+                    必ず以下のJSON形式のみで出力してください。余計な挨拶や解説は不要です。:
+                    {"score": 0-100, "judgment": "正解/部分点/不正解", "comment": "簡潔な評価"} `;
+
+                    const result = await model.generateContent(prompt);
+                    const raw = result.response.text();
+                    const jsonMatch = raw.match(/\{.*\}/s);
+                    const res = JSON.parse(jsonMatch[0]);
+
+                    if(res.score >= 80) this.score++;
+                    this.showFeedback(`${res.judgment} (${res.score}点)`, `${res.comment}\n\n【模範解答】\n${quizData[this.currentIndex].ans}`);
+                } catch(e) {
+                    this.showFeedback("エラー", "採点に失敗しました。");
+                    document.getElementById('submit-desc-btn').disabled = false;
+                }
+            },
+
+            showFeedback(title, detail) {
+                document.getElementById('feedback').classList.remove('hidden');
+                document.getElementById('result-label').innerText = title === true ? "⭕ 正解" : (title === false ? "❌ 不正解" : title);
+                document.getElementById('explanation').innerText = detail;
+            },
+
+            nextQuestion() {
+                this.currentIndex++;
+                if(this.currentIndex < quizData.length) this.loadQuestion();
+                else {
+                    this.showScreen('result-screen');
+                    document.getElementById('final-score').innerText = `${quizData.length}問中 ${this.score}問 正解`;
+                }
+            },
+
+            returnToMenu() { this.showScreen('menu-screen'); }
+        };
     </script>
 </body>
 </html>
