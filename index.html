@@ -262,7 +262,7 @@
             }
         ];
 
-        window.app = {
+window.app = {
             apiKey: "",
             genAI: null,
             currentIndex: 0,
@@ -325,29 +325,43 @@
                 let finalChoices = [];
                 if (this.genAI) {
                     try {
-                        const modelLite = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-                        const modelPro = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                        const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                        
+                        const prompt = `あなたは高校国語の試験問題作成者です。
+問題: ${data.q}
+正解（元の解答例）: ${data.ans}
 
-const [distRes, paraRes] = await Promise.all([
-    modelLite.generateContent(`問題: ${data.q}\n正解: ${data.ans}\nこの正解に近い文字数と複雑さで誤りである選択肢を2つ作ってください。文末を「〜ため。」などの正解の形式に合わせてください。出力形式: 誤答1|誤答2`),
-    modelPro.generateContent(`「${data.ans}」という文章を、意味や複雑さ、分量を変えずに1つ言い換えたものを出力してください。文末は変えないでください。`)
-]);
-const dists = distRes.response.text().split('|').map(text => text.replace(/^誤答\d*[:：\s]*/, '').trim());
-const paraphrased = paraRes.response.text().trim();
+上記の正解をベースに、3択クイズの選択肢を3つ作成してください。
+以下の条件を必ず守ってください：
+1. 1つ目は、元の解答例の意味を変えずに、より簡潔で平易な表現に言い換えた「正答」。
+2. 2つ目と3つ目は、もっともらしいが明確に誤りである「誤答」。
+3. 正答と誤答の文字数や文体の複雑さを揃えること（正解だけが長くなったりしないように）。
+4. 文末表現（例：「〜から。」「〜ため。」など）を3つとも完全に一致させること。
+5. 「正答：」「誤答：」などのラベルや箇条書きの番号は一切書かず、文章のみを「|」で区切って1行で出力してください。
 
-// 分割できた要素が足りない場合のエラーハンドリングを追加して安全にする
-if (dists.length >= 2) {
-    finalChoices = [paraphrased, dists[0], dists[1]];
-} else {
-    throw new Error("フォーマットエラー");
-}
+出力形式の例:
+言い換えた正答の文章|誤答の文章1|誤答の文章2`;
+
+                        const result = await model.generateContent(prompt);
+                        const rawText = result.response.text();
+                        
+                        // "正答:" などの不要なプレフィックスが万が一入った場合に備えて削除
+                        const choices = rawText.split('|').map(text => text.replace(/^(正答|誤答\d*)[:：\s]*/, '').trim());
+                        
+                        if (choices.length >= 3) {
+                            finalChoices = [choices[0], choices[1], choices[2]];
+                        } else {
+                            throw new Error("フォーマットエラー");
+                        }
                     } catch(e) {
+                        console.error("生成エラー:", e);
                         finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
                     }
                 } else {
                     finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
                 }
 
+                // シャッフル処理
                 const mapped = finalChoices.map((t, i) => ({ t, correct: i === 0 })).sort(() => Math.random() - 0.5);
                 this.correctIndex = mapped.findIndex(m => m.correct);
                 btns.forEach((b, i) => {
@@ -362,7 +376,7 @@ if (dists.length >= 2) {
                 const win = idx === this.correctIndex;
                 if(win) { this.score++; btns[idx].style.backgroundColor = "#c8e6c9"; }
                 else { btns[idx].style.backgroundColor = "#ffcdd2"; btns[this.correctIndex].style.backgroundColor = "#c8e6c9"; }
-                this.showFeedback(win, `【解説】\n${quizData[this.currentIndex].memo}`);
+                this.showFeedback(win, `【元の解答例】\n${quizData[this.currentIndex].ans}\n\n【解説】\n${quizData[this.currentIndex].memo}`);
             },
 
             async submitDesc() {
@@ -391,7 +405,10 @@ if (dists.length >= 2) {
 
                     const result = await model.generateContent(prompt);
                     const raw = result.response.text();
-                    const jsonMatch = raw.match(/\{.*\}/s);
+                    
+                    // JSONを安全に取り出す
+                    const cleanJsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+                    const jsonMatch = cleanJsonStr.match(/\{.*\}/s);
                     const res = JSON.parse(jsonMatch[0]);
 
                     if(res.score >= 80) this.score++;
