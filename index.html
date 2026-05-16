@@ -325,7 +325,7 @@ window.app = {
                 let finalChoices = [];
                 if (this.genAI) {
                     try {
-                        const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                        const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
                         
                         const prompt = `あなたは高校国語の試験問題作成者です。
 問題: ${data.q}
