@@ -330,7 +330,7 @@
 
 const [distRes, paraRes] = await Promise.all([
     modelLite.generateContent(`問題: ${data.q}\n正解: ${data.ans}\nこの正解に近い文字数と複雑さで誤りである選択肢を2つ作ってください。文末を「〜ため。」などの正解の形式に合わせてください。出力形式: 誤答1|誤答2`),
-    modelPro.generateContent(`「${data.ans}」という文章を、意味や複雑さを変えずに1つ言い換えてください。文末は変えないでください。`)
+    modelPro.generateContent(`「${data.ans}」という文章を、意味や複雑さ、分量を変えずに1つ言い換えたものを出力してください。文末は変えないでください。`)
 ]);
 const dists = distRes.response.text().split('|').map(text => text.replace(/^誤答\d*[:：\s]*/, '').trim());
 const paraphrased = paraRes.response.text().trim();
