@@ -330,7 +330,7 @@
 
                         const [distRes, paraRes] = await Promise.all([
                             modelLite.generateContent(`問題: ${data.q}\n正解: ${data.ans}\nこの正解に近いが誤りである選択肢を2つ作ってください。文末を「〜ため。」などの正解の形式に合わせてください。出力形式: 誤答1|誤答2`),
-                            modelPro.generateContent(`「${data.ans}」という文章を、意味を変えずにより自然な表現で1つ言い換えてください。文末は変えないでください。`)
+                            modelLite.generateContent(`「${data.ans}」という文章を、意味を変えずにより自然な表現で1つ言い換えてください。文末は変えないでください。`)
                         ]);
 
                         const dists = distRes.response.text().split('|');
