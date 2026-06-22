@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>もちひめ - 汎用テスト対策アプリ</title>
+    <style>
+        :root {
+            --primary-color: #5d4037;
+            --bg-color: #f4f1ea;
+            --btn-hover: #795548;
+        }
+        body {
+            font-family: "Hiragino Mincho ProN", "MS PMincho", serif;
+            background-color: var(--bg-color);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+            line-height: 1.6;
+        }
+        #app {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .screen { text-align: center; }
+        .hidden { display: none !important; }
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .input-group { margin: 20px 0; text-align: left; }
+        label { font-weight: bold; }
+        input[type="password"], input[type="file"], textarea {
+            width: 100%; padding: 12px; margin-top: 8px;
+            border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+            font-family: inherit; font-size: 1rem;
+        }
+        button {
+            background-color: var(--primary-color); color: white;
+            border: none; padding: 14px 24px; margin: 10px 0;
+            border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%;
+            transition: background-color 0.2s;
+            font-family: inherit;
+        }
+        button:hover:not(:disabled) { background-color: var(--btn-hover); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .choice-btn {
+            background-color: #fff; color: #333;
+            border: 2px solid var(--primary-color);
+            text-align: left; transition: 0.2s; margin-bottom: 10px;
+        }
+        .choice-btn:hover:not(:disabled) { background-color: #efebe9; }
+        
+        #progress { font-size: 0.9rem; color: #666; text-align: right; margin-bottom: 10px; }
+        #question-text {
+            font-size: 1.25rem; font-weight: bold; margin: 20px 0; text-align: left;
+            border-left: 5px solid var(--primary-color); padding-left: 15px;
+        }
+        #feedback {
+            margin-top: 20px; padding: 15px; border-radius: 4px;
+            background: #f9f9f9; text-align: left; border: 1px solid #ddd;
+        }
+        #result-label { font-weight: bold; font-size: 1.3rem; margin-bottom: 10px; }
+        .score-display { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); margin: 20px 0; }
+        .hint-text { font-size: 0.85rem; color: #666; display: block; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="setup-screen" class="screen">
+            <h1>もちひめ</h1>
+            <p>定期考査対策アプリ</p>
+            
+            <div class="input-group">
+                <label for="csv-file">オリジナル問題データ (CSV):</label>
+                <input type="file" id="csv-file" accept=".csv">
+                <span class="hint-text">※ファイルを選択しない場合、デフォルトの「舞姫」データで開始します。</span>
+            </div>
+
+            <div class="input-group">
+                <label for="api-key">Gemini API Key:</label>
+                <input type="password" id="api-key" placeholder="空欄ならオフラインモード（3択のみ）">
+            </div>
+
+            <button onclick="app.startMenu()">学習を開始する</button>
+        </div>
+
+        <div id="menu-screen" class="screen hidden">
+            <h1>メニュー</h1>
+            <p id="mode-status"></p>
+            <p id="data-status" style="font-weight: bold; color: var(--primary-color);"></p>
+            <button onclick="app.startMode('choice')">3択クイズモード</button>
+            <button id="desc-btn" onclick="app.startMode('desc')">記述演習モード (オンライン専用)</button>
+            <button onclick="app.downloadTemplate()" style="background-color: #2e7d32;">問題データひな形 (CSV) をダウンロード</button>
+            <button onclick="location.reload()" style="background-color: #777;">設定に戻る</button>
+        </div>
+
+        <div id="quiz-screen" class="screen hidden">
+            <div id="progress"></div>
+            <div id="question-text"></div>
+            
+            <div id="choice-container" class="hidden">
+                <button class="choice-btn" onclick="app.selectChoice(0)"></button>
+                <button class="choice-btn" onclick="app.selectChoice(1)"></button>
+                <button class="choice-btn" onclick="app.selectChoice(2)"></button>
+            </div>
+
+            <div id="desc-container" class="hidden">
+                <textarea id="user-answer" placeholder="ここに解答を入力してください..." rows="4"></textarea>
+                <button id="submit-desc-btn" onclick="app.submitDesc()">採点する</button>
+            </div>
+
+            <div id="feedback" class="hidden">
+                <div id="result-label"></div>
+                <div id="explanation" style="white-space: pre-wrap;"></div>
+                <button id="next-btn" onclick="app.nextQuestion()">次へ</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="screen hidden">
+            <h1>学習終了</h1>
+            <div id="final-score" class="score-display"></div>
+            <button onclick="app.returnToMenu()">メニューに戻る</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
+        // デフォルトの舞姫データ（CSV作成の参考用として3問だけ残す）
+        const defaultQuizData = [
+            {
+                loc: "P212 L1",
+                q: "熾熱灯を「いたづらなり」と感じた理由は？",
+                ans: "毎晩集まってトランプをしている仲間がみなホテルに行ってしまい、広く明るい中等室に自分一人しかいないため、明かりが無意味でむなしく感じられたから。",
+                memo: "【追加事項：仲間がホテルに行き、船には自分一人だけしかいない。主人公の虚無感(心情)を暗示。】\n元メモ：熾熱灯がまぶしく、そこに似つかわない気分で落ち込んでいる。広い中等室にたった一人でいる空虚さや寂しさ、虚無感の暗示。",
+                distractors: ["灯りが暗すぎて周囲の様子がよく分からず不安になったから。","帰国の喜びを分かち合える友人が船内に一人もいなかったため。","電灯の文明的な輝きが古風なドイツの風景と乖離していたから。"]
+            },
+            {
+                loc: "P212 L10",
+                q: "日記が白紙のままなのはなぜか？",
+                ans: "誰も知らないような恨み事が自分を悩ませており、楽しくなく虚無な感じがするから。",
+                memo: "【追加事項：対照的な表現は「筆に任せて書き～かなしけん」。誰も知らない恨み事に苦しんでいる。】\n元メモ：「行きはいっぱい書いたが、帰りは書いていない」こと。初めて見た刺激や期待感（行き）と、現在の虚しい心持ち（帰り）が対照的である。",
+                distractors: ["多忙な日々の中で日記を記す物理的な時間が取れなかったから。","ドイツでの出来事が多すぎて何から書けばよいか迷ったから。","帰国後の出世が約束されており過去を振り返る必要がなかったため。"]
+            },
+            {
+                loc: "P216 L7",
+                q: "なぜ留学中に外物を遮断したのか？",
+                ans: "勉強や仕事の成果を出すためにドイツに来ており、無駄な美しさに決して心を動かすまいと誓いを立てていたから。",
+                memo: "【追加事項：勉強・仕事のためにドイツにきている。成果を出したい。】\n元メモ：国費留学という名誉ある立場で、出世という本来の目標のための自制と誓いがあったから。ヨーロッパの美しさに心を動かされないよう誘惑を遮断していた。",
+                distractors: ["異国の文化に触れることで日本の伝統的な心を失うのが怖かったから。","現地の日本人学生たちとの交流を絶ち孤独に耐える訓練をするため。","語学の習得に専念するため娯楽や交友関係をすべて断ち切ったから。"]
+            }
+        ];
+
+        window.app = {
+            apiKey: "",
+            genAI: null,
+            quizData: [], 
+            currentIndex: 0,
+            score: 0,
+            mode: "",
+            correctIndex: 0,
+
+            // CSVひな形をダウンロードする関数
+            downloadTemplate() {
+                const headers = ["loc", "q", "ans", "memo", "dist1", "dist2", "dist3"];
+                let csvContent = headers.join(",") + "\n";
+                
+                defaultQuizData.forEach(item => {
+                    const row = [
+                        item.loc || "",
+                        item.q || "",
+                        item.ans || "",
+                        item.memo || "",
+                        item.distractors[0] || "",
+                        item.distractors[1] || "",
+                        item.distractors[2] || ""
+                    ];
+                    
+                    const escapedRow = row.map(val => {
+                        let text = String(val);
+                        // カンマ、ダブルクォーテーション、改行が含まれる場合はダブルクォーテーションで囲む
+                        if (text.includes(',') || text.includes('\"') || text.includes('\n') || text.includes('\r')) {
+                            // セル内のダブルクォーテーションは2つ重ねてエスケープする
+                            text = '"' + text.replace(/\"/g, '""') + '"';
+                        }
+                        return text;
+                    });
+                    csvContent += escapedRow.join(",") + "\n";
+                });
+                
+                // BOM（Byte Order Mark）を追加してExcelでの文字化けを防ぐ
+                const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", "mochihime_template.csv");
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+
+            async startMenu() {
+                this.apiKey = document.getElementById('api-key').value.trim();
+                const csvFile = document.getElementById('csv-file').files[0];
+                const status = document.getElementById('mode-status');
+                const dataStatus = document.getElementById('data-status');
+                const descBtn = document.getElementById('desc-btn');
+
+                if (this.apiKey) {
+                    this.genAI = new GoogleGenerativeAI(this.apiKey);
+                    status.innerText = "🌐 オンラインモード（記述・AI問題生成 有効）";
+                    descBtn.disabled = false;
+                } else {
+                    this.genAI = null;
+                    status.innerText = "📴 オフラインモード（記述不可 / AI問題生成不可）";
+                    descBtn.disabled = true;
+                }
+
+                if (csvFile) {
+                    try {
+                        const text = await csvFile.text();
+                        this.quizData = this.parseCSV(text);
+                        dataStatus.innerText = `📂 外部データ読み込み完了: ${this.quizData.length}問`;
+                    } catch (e) {
+                        alert("CSVファイルの読み込みに失敗しました。フォーマットを確認してください。\n" + e.message);
+                        return;
+                    }
+                } else {
+                    this.quizData = defaultQuizData;
+                    dataStatus.innerText = `📘 デフォルトデータ（舞姫）を使用: ${this.quizData.length}問`;
+                }
+
+                this.showScreen('menu-screen');
+            },
+
+            parseCSV(csvText) {
+                const rows = [];
+                let currentRow = [];
+                let currentCell = '';
+                let inQuotes = false;
+
+                for (let i = 0; i < csvText.length; i++) {
+                    const char = csvText[i];
+                    const nextChar = csvText[i + 1];
+
+                    if (inQuotes) {
+                        if (char === '"' && nextChar === '"') {
+                            currentCell += '"'; i++;
+                        } else if (char === '"') {
+                            inQuotes = false;
+                        } else {
+                            currentCell += char;
+                        }
+                    } else {
+                        if (char === '"') {
+                            inQuotes = true;
+                        } else if (char === ',') {
+                            currentRow.push(currentCell); currentCell = '';
+                        } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+                            currentRow.push(currentCell); rows.push(currentRow);
+                            currentRow = []; currentCell = '';
+                            if (char === '\r') i++;
+                        } else {
+                            currentCell += char;
+                        }
+                    }
+                }
+                if (currentCell !== '' || currentRow.length > 0) {
+                    currentRow.push(currentCell); rows.push(currentRow);
+                }
+
+                if (rows.length < 2) throw new Error("データが少なすぎます。ヘッダー行とデータ行が必要です。");
+
+                const headers = rows[0].map(h => h.trim());
+                const parsedData = [];
+
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length === 1 && row[0] === "") continue; 
+
+                    const item = { distractors: [] };
+                    for (let j = 0; j < headers.length; j++) {
+                        const h = headers[j];
+                        const val = row[j] ? row[j].trim() : "";
+                        if (h === 'loc' || h === 'q' || h === 'ans' || h === 'memo') {
+                            item[h] = val;
+                        } else if (h.startsWith('dist')) { 
+                            if (val) item.distractors.push(val);
+                        }
+                    }
+                    if (item.q && item.ans) {
+                        while (item.distractors.length < 2) {
+                            item.distractors.push("誤りの選択肢（ダミーデータ）");
+                        }
+                        parsedData.push(item);
+                    }
+                }
+                
+                if (parsedData.length === 0) throw new Error("有効な問題が一つも見つかりませんでした。");
+                return parsedData;
+            },
+
+            showScreen(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+
+            async startMode(m) {
+                this.mode = m;
+                this.currentIndex = 0;
+                this.score = 0;
+                this.showScreen('quiz-screen');
+                await this.loadQuestion();
+            },
+
+            async loadQuestion() {
+                const data = this.quizData[this.currentIndex];
+                const locText = data.loc ? ` (${data.loc})` : '';
+                document.getElementById('progress').innerText = `${this.currentIndex + 1} / ${this.quizData.length}問${locText}`;
+                document.getElementById('question-text').innerText = data.q;
+                document.getElementById('feedback').classList.add('hidden');
+                document.getElementById('user-answer').value = "";
+                document.getElementById('submit-desc-btn').disabled = false;
+
+                if (this.mode === 'choice') {
+                    document.getElementById('choice-container').classList.remove('hidden');
+                    document.getElementById('desc-container').classList.add('hidden');
+                    await this.prepareChoices(data);
+                } else {
+                    document.getElementById('choice-container').classList.add('hidden');
+                    document.getElementById('desc-container').classList.remove('hidden');
+                }
+            },
+
+            async prepareChoices(data) {
+                const btns = document.querySelectorAll('.choice-btn');
+                btns.forEach(b => { b.innerText = "生成中..."; b.disabled = true; b.style.backgroundColor = ""; });
+
+                let finalChoices = [];
+                if (this.genAI) {
+                    try {
+                        const modelLite = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+                        const modelPro = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash });
+
+                        const [distRes, paraRes] = await Promise.all([
+                            modelLite.generateContent(`問題: ${data.q}\n正解: ${data.ans}\nこの正解と同じくらいの文字数と複雑さで、もっともらしいが明確に誤りである選択肢を2つ作ってください。文末表現は正解と完全に一致させてください。「誤答1:」などのラベルや箇条書きの記号は一切書かず、文章のみを「|」で区切って出力してください。`),
+                            modelPro.generateContent(`「${data.ans}」という文章を、意味を損なわずに、より簡潔で平易な表現で1つ言い換えてください。必要以上に難解な言葉は避け、元の文章と同じくらいの長さに揃えてください。文末の表現は絶対に変えないでください。`)
+                        ]);
+
+                        const dists = distRes.response.text().split('|').map(text => text.replace(/^誤答\d*[:：\s]*/, '').trim());
+                        const paraphrased = paraRes.response.text().trim();
+                        
+                        if (dists.length >= 2) {
+                            finalChoices = [paraphrased, dists[0], dists[1]];
+                        } else {
+                            throw new Error("フォーマットエラー");
+                        }
+                    } catch(e) {
+                        finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
+                    }
+                } else {
+                    finalChoices = [data.ans, data.distractors[0], data.distractors[1]];
+                }
+
+                const mapped = finalChoices.map((t, i) => ({ t, correct: i === 0 })).sort(() => Math.random() - 0.5);
+                this.correctIndex = mapped.findIndex(m => m.correct);
+                btns.forEach((b, i) => {
+                    b.innerText = mapped[i].t;
+                    b.disabled = false;
+                });
+            },
+
+            selectChoice(idx) {
+                const btns = document.querySelectorAll('.choice-btn');
+                btns.forEach(b => b.disabled = true);
+                const win = idx === this.correctIndex;
+                if(win) { this.score++; btns[idx].style.backgroundColor = "#c8e6c9"; }
+                else { btns[idx].style.backgroundColor = "#ffcdd2"; btns[this.correctIndex].style.backgroundColor = "#c8e6c9"; }
+                
+                const data = this.quizData[this.currentIndex];
+                const memoText = data.memo ? `\n\n【解説】\n${data.memo}` : "";
+                this.showFeedback(win, `【元の解答例】\n${data.ans}${memoText}`);
+            },
+
+            async submitDesc() {
+                const userAns = document.getElementById('user-answer').value.trim();
+                if(!userAns || !this.genAI) return;
+
+                document.getElementById('submit-desc-btn').disabled = true;
+                document.getElementById('result-label').innerText = "採点中...";
+                document.getElementById('feedback').classList.remove('hidden');
+
+                try {
+                    const data = this.quizData[this.currentIndex];
+                    const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                    const prompt = `国語の記述問題の採点を行ってください。
+                    問題: ${data.q}
+                    模範解答: ${data.ans}
+                    授業メモ（採点ポイント）: ${data.memo || "特になし"}
+                    生徒の解答: ${userAns}
+
+                    採点基準:
+                    1. 模範解答や授業メモにある主要なキーワードや論理的背景が含まれていれば、概ね80点としてください。
+                    2. 表現が正確で、文脈に即している場合はさらに加点してください。
+                    3. 文末表現の不備は軽微な減点に留めてください。
+
+                    必ず以下のJSON形式のみで出力してください。余計な挨拶や解説は不要です。:
+                    {"score": 0-100, "judgment": "正解/部分点/不正解", "comment": "簡潔な評価"} `;
+
+                    const result = await model.generateContent(prompt);
+                    const raw = result.response.text();
+                    const jsonMatch = raw.match(/\{.*\}/s);
+                    const res = JSON.parse(jsonMatch[0]);
+
+                    if(res.score >= 80) this.score++;
+                    this.showFeedback(`${res.judgment} (${res.score}点)`, `${res.comment}\n\n【模範解答】\n${data.ans}`);
+                } catch(e) {
+                    this.showFeedback("エラー", "採点に失敗しました。");
+                    document.getElementById('submit-desc-btn').disabled = false;
+                }
+            },
+
+            showFeedback(title, detail) {
+                document.getElementById('feedback').classList.remove('hidden');
+                document.getElementById('result-label').innerText = title === true ? "⭕ 正解" : (title === false ? "❌ 不正解" : title);
+                document.getElementById('explanation').innerText = detail;
+            },
+
+            nextQuestion() {
+                this.currentIndex++;
+                if(this.currentIndex < this.quizData.length) this.loadQuestion();
+                else {
+                    this.showScreen('result-screen');
+                    document.getElementById('final-score').innerText = `${this.quizData.length}問中 ${this.score}問 正解`;
+                }
+            },
+
+            returnToMenu() { this.showScreen('menu-screen'); }
+        };
+    </script>
+</body>
+</html>
